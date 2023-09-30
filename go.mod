@@ -3,7 +3,6 @@ module github.com/happilymarrieddad/ws-api
 go 1.21.1
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang/mock v1.6.0
 	github.com/happilymarrieddad/interfaces v0.0.0-20230216202758-61a4b3fb1e71
