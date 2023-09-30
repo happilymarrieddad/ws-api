@@ -1,4 +1,4 @@
-generate:
+generate.mocks:
 	go generate ./...
 
 install.deps:

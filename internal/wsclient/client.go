@@ -39,7 +39,7 @@ type WeatherResponse struct {
 	Conditions  []*types.Weather
 }
 
-//go:generate mockgen -destination=./mocks/WSClient.go -package=mocks ws-api/interfaces/WSClient WSClient
+//go:generate mockgen -destination=./mocks/WSClient.go -package=mocks github.com/happilymarrieddad/ws-api/internal/wsclient WSClient
 type WSClient interface {
 	GetWeatherDataAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (*WeatherResponse, error)
 	GetWeatherAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (*types.GetWeatherResponse, error)
