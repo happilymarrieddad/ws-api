@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  api:
+    container_name: api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OPEN_WEATHER_API_KEY=${OPEN_WEATHER_API_KEY}
+    ports:
+      - 8000:8000

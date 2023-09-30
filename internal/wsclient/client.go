@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/happilymarrieddad/ws-api/internal/config"
@@ -17,33 +16,34 @@ import (
 	"github.com/happilymarrieddad/interfaces/httpclient"
 )
 
-type tempType string
-type weatherCondition string
+type TempType string
+type WeatherCondition string
 
 const (
-	Kelvin     tempType = "standard"
-	Celcius    tempType = "metric"
-	Fahrenheit tempType = "imperial"
+	Kelvin     TempType = "standard"
+	Celcius    TempType = "metric"
+	Fahrenheit TempType = "imperial"
 )
 
 const (
-	Hot      weatherCondition = "Hot"
-	Cold     weatherCondition = "Cold"
-	Moderate weatherCondition = "Moderate"
+	Hot      WeatherCondition = "hot"
+	Cold     WeatherCondition = "cold"
+	Moderate WeatherCondition = "moderate"
 )
 
 const getWeatherAtLongLangURLFormat = "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=%s"
 
 type WeatherResponse struct {
-	Temperature weatherCondition `json:"temperature"`
-	Conditions  []*types.Weather
+	TempFeelsLike WeatherCondition `json:"temperature_feels_like"`
+	Temperature   float64          `json:"temp"`
+	Conditions    []*types.Weather `json:"conditions_and_alerts"`
 }
 
 //go:generate mockgen -destination=./mocks/WSClient.go -package=mocks github.com/happilymarrieddad/ws-api/internal/wsclient WSClient
 type WSClient interface {
-	GetWeatherDataAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (*WeatherResponse, error)
-	GetWeatherAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (*types.GetWeatherResponse, error)
-	GetWeatherCondition(tt tempType, tempVal float64) (weatherCondition, error)
+	GetWeatherDataAtLongLat(ctx context.Context, latitude, longitude float64, tt *TempType) (*WeatherResponse, error)
+	GetWeatherAtLongLat(ctx context.Context, latitude, longitude float64, tt *TempType) (*types.GetWeatherResponse, error)
+	GetWeatherConditonFromTempType(tt TempType, tempVal float64) (WeatherCondition, error)
 }
 
 func NewWSClient(cfg *config.Config, httpClient httpclient.HTTPClient) (WSClient, error) {
@@ -69,7 +69,7 @@ type wsClient struct {
 	httpClient httpclient.HTTPClient
 }
 
-func (c *wsClient) GetWeatherDataAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (*WeatherResponse, error) {
+func (c *wsClient) GetWeatherDataAtLongLat(ctx context.Context, latitude, longitude float64, tt *TempType) (*WeatherResponse, error) {
 	if tt == nil {
 		tt = utils.Ref(Fahrenheit)
 	}
@@ -79,18 +79,19 @@ func (c *wsClient) GetWeatherDataAtLongLat(ctx context.Context, latitude, longit
 		return nil, err
 	}
 
-	cond, err := c.GetWeatherCondition(*tt, res.Main.Temp)
+	cond, err := c.GetWeatherConditonFromTempType(*tt, res.Main.Temp)
 	if err != nil {
 		return nil, err
 	}
 
 	return &WeatherResponse{
-		Temperature: cond,
-		Conditions:  res.Weather,
+		TempFeelsLike: cond,
+		Temperature:   res.Main.Temp,
+		Conditions:    res.Weather,
 	}, nil
 }
 
-func (c *wsClient) GetWeatherAtLongLat(ctx context.Context, latitude, longitude float64, tt *tempType) (ws *types.GetWeatherResponse, err error) {
+func (c *wsClient) GetWeatherAtLongLat(ctx context.Context, latitude, longitude float64, tt *TempType) (ws *types.GetWeatherResponse, err error) {
 	if tt == nil {
 		tt = utils.Ref(Fahrenheit)
 	}
@@ -110,23 +111,27 @@ func (c *wsClient) GetWeatherAtLongLat(ctx context.Context, latitude, longitude 
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf("client: could not read response body: %s\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	fmt.Println(string(resBody))
 	ws = new(types.GetWeatherResponse)
 	if err = json.Unmarshal(resBody, ws); err != nil {
 		return nil, err
 	}
 
+	if ws.Code/100 != 2 {
+		return nil, errors.New(ws.ErrMessage)
+	}
+
 	return ws, nil
 }
 
-// getWeatherCondition - converts to Fahrenheit to test
-func (*wsClient) GetWeatherCondition(tt tempType, tempVal float64) (weatherCondition, error) {
+// GetWeatherConditonFromTempType converts to Fahrenheit from temp type and returns the weather condition
+func (*wsClient) GetWeatherConditonFromTempType(tt TempType, tempVal float64) (WeatherCondition, error) {
 	var valToTest float64
 
+	// TODO: do not use literals here... need to create consts at some point
+	//		actually.. probably should make helper funcs here that are tested
 	switch tt {
 	case Kelvin:
 		valToTest = (tempVal-273.15)*9/5 + 32
@@ -145,4 +150,17 @@ func (*wsClient) GetWeatherCondition(tt tempType, tempVal float64) (weatherCondi
 	}
 
 	return Moderate, nil
+}
+
+func ValidateTempType(tt *TempType) error {
+	if tt == nil {
+		return nil // client will just default so don't worry about it
+	}
+
+	switch *tt {
+	case Celcius, Fahrenheit, Kelvin:
+		return nil
+	}
+
+	return errors.New("invalid temp type")
 }

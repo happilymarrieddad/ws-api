@@ -28,57 +28,65 @@ var _ = Describe("WSClient Tester", func() {
 		Expect(config).NotTo(BeNil())
 	})
 
-	It("should return a valid config", func() {
-		res, err := client.GetWeatherAtLongLat(ctx, 43.629398, -111.773613, utils.Ref(wsclient.Fahrenheit))
-		Expect(err).To(BeNil())
+	Context("GetWeatherAtLongLat", func() {
+		It("should return an err when an invalid lat long is passed in", func() {
+			res, err := client.GetWeatherAtLongLat(ctx, -111.773613, 43.629398, utils.Ref(wsclient.Fahrenheit))
+			Expect(err).NotTo(BeNil())
+			Expect(res).To(BeNil())
+		})
 
-		Expect(res.City).To(Equal("Rigby"))
+		It("should return a valid weather at a specific lat long", func() {
+			res, err := client.GetWeatherAtLongLat(ctx, 43.629398, -111.773613, utils.Ref(wsclient.Fahrenheit))
+			Expect(err).To(BeNil())
+
+			Expect(res.City).To(Equal("Rigby"))
+		})
 	})
 
-	Context("GetWeatherCondition", func() {
+	Context("GetWeatherConditonFromTempType", func() {
 		It("should return an error with an invalid temp type", func() {
-			_, err := client.GetWeatherCondition("GARBAGE", 83.56)
+			_, err := client.GetWeatherConditonFromTempType("GARBAGE", 83.56)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should return the correct weather type for Fahrenheit", func() {
-			condition, err := client.GetWeatherCondition(wsclient.Fahrenheit, 55.5)
+			condition, err := client.GetWeatherConditonFromTempType(wsclient.Fahrenheit, 55.5)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Moderate))
 
-			condition, err = client.GetWeatherCondition(wsclient.Fahrenheit, 44.5)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Fahrenheit, 44.5)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Cold))
 
-			condition, err = client.GetWeatherCondition(wsclient.Fahrenheit, 84.5)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Fahrenheit, 84.5)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Hot))
 		})
 
 		It("should return the correct weather type for Celcius", func() {
-			condition, err := client.GetWeatherCondition(wsclient.Celcius, 10)
+			condition, err := client.GetWeatherConditonFromTempType(wsclient.Celcius, 10)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Moderate))
 
-			condition, err = client.GetWeatherCondition(wsclient.Celcius, 7)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Celcius, 7)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Cold))
 
-			condition, err = client.GetWeatherCondition(wsclient.Celcius, 22)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Celcius, 22)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Hot))
 		})
 
 		It("should return the correct weather type for Kelvin", func() {
-			condition, err := client.GetWeatherCondition(wsclient.Kelvin, 286)
+			condition, err := client.GetWeatherConditonFromTempType(wsclient.Kelvin, 286)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Moderate))
 
-			condition, err = client.GetWeatherCondition(wsclient.Kelvin, 280)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Kelvin, 280)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Cold))
 
-			condition, err = client.GetWeatherCondition(wsclient.Kelvin, 295)
+			condition, err = client.GetWeatherConditonFromTempType(wsclient.Kelvin, 295)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(condition).To(Equal(wsclient.Hot))
 		})

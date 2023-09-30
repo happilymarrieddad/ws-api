@@ -56,5 +56,6 @@ type GetWeatherResponse struct {
 	Timezome    int64        `json:"timezone"`
 	ID          int64        `json:"id"`
 	City        string       `json:"name"`
-	Code        int          `json:"code"`
+	Code        int          `json:"cod"`
+	ErrMessage  string       `json:"message"`
 }
