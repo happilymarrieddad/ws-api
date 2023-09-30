@@ -6,8 +6,13 @@ install.deps:
 	go get github.com/onsi/gomega/...
 	go install github.com/golang/mock/mockgen@v1.6.0
 
-tests.all:
+test: test.ginkgo
+
+test.ginkgo:
 	ginkgo -r --fail-fast
+
+test.basic:
+	go test ./...
 
 docker.push:
 	./deploy.sh
