@@ -40,7 +40,7 @@ make generate
 
 Run Tests
 ```bash
-make tests.all
+make test
 ```
 
 ## Docker image
